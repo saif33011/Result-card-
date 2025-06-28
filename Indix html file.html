@@ -49,6 +49,10 @@
       margin-top: 40px;
       font-weight: bold;
     }
+    .info-bar {
+      text-align: right;
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
@@ -56,9 +60,7 @@
 <div class="container" id="inputSection">
   <h2>School Result Card</h2>
 
-  <p><strong>School Name:</strong> 
-    <input type="text" id="schoolName" value="Saif Bhatti">
-  </p>
+  <p><strong>School Name:</strong> <input type="text" id="schoolName" value="Saif Bhatti"></p>
   <p><strong>Student Name:</strong> <input type="text" id="name">
      <strong>Class:</strong> <input type="text" id="class">
      <strong>Roll No:</strong> <input type="text" id="roll">
@@ -81,8 +83,12 @@
 </div>
 
 <div class="container hidden" id="resultCard">
+  <div class="info-bar">
+    Date: <span id="dateToday"></span>
+  </div>
+
   <h2 id="schoolTitle">School Name</h2>
-  <h3>Student Result Card</h3>
+  <h3>School Result Card</h3>
   <p><strong>Name:</strong> <span id="rName"></span> |
      <strong>Class:</strong> <span id="rClass"></span> |
      <strong>Roll No:</strong> <span id="rRoll"></span>
@@ -105,7 +111,7 @@
   <p><strong>Total Marks:</strong> <span id="tMarks"></span></p>
   <p><strong>Marks Obtained:</strong> <span id="oMarks"></span></p>
   <p><strong>Overall Percentage:</strong> <span id="oPercent"></span>%</p>
-  <p><strong>Final Grade:</strong> <span id="oGrade"></span></p>
+  <p><strong>Overall Grade:</strong> <span id="oGrade"></span></p>
   <p><strong>Failed Subjects:</strong> <span id="failList"></span></p>
   <p><strong>Final Result:</strong> <span id="finalResult"></span></p>
 
@@ -127,8 +133,7 @@
 
   const subjectRows = document.getElementById("subjectRows");
 
-  // Add subject rows with dropdowns
-  subjects.forEach((sub, i) => {
+  subjects.forEach(sub => {
     subjectRows.innerHTML += `
       <tr>
         <td>${sub}</td>
@@ -145,13 +150,14 @@
     `;
   });
 
-  function getGrade(percent) {
+  function getGrade(percent, total) {
+    if (total === 0) return "Non";
     if (percent >= 90) return "A+";
     if (percent >= 80) return "A";
     if (percent >= 70) return "B";
     if (percent >= 60) return "C";
-    if (percent >= 50) return "D";
-    if (percent >= 33) return "E";
+    if (percent >= 33) return "D";
+    if (percent > 0) return "F";
     return "F";
   }
 
@@ -170,16 +176,10 @@
     for (let i = 0; i < subjects.length; i++) {
       const t = Number(totals[i].value);
       const o = Number(obtained[i].value);
-      let percent = 0;
-      let status = "N/A";
-      let grade = "-";
-
-      if (t > 0) {
-        percent = ((o / t) * 100).toFixed(2);
-        status = percent >= 33 ? "Pass" : "Fail";
-        grade = getGrade(percent);
-        if (status === "Fail") failedSubjects.push(subjects[i]);
-      }
+      const percent = t === 0 ? 0 : ((o / t) * 100).toFixed(2);
+      const grade = getGrade(percent, t);
+      const status = t === 0 ? "Non" : (percent >= 33 ? "Pass" : "Fail");
+      if (status === "Fail") failedSubjects.push(subjects[i]);
 
       totalMarks += t;
       totalObtained += o;
@@ -189,7 +189,7 @@
           <td>${subjects[i]}</td>
           <td>${t}</td>
           <td>${o}</td>
-          <td>${t > 0 ? percent + "%" : "-"}</td>
+          <td>${t === 0 ? "0" : percent + "%"}</td>
           <td>${status}</td>
           <td>${grade}</td>
         </tr>
@@ -197,10 +197,12 @@
     }
 
     const overallPercent = totalMarks > 0 ? ((totalObtained / totalMarks) * 100).toFixed(2) : 0;
-    const overallGrade = getGrade(overallPercent);
+    const overallGrade = getGrade(overallPercent, totalMarks);
     let finalStatus = "Pass";
     if (failedSubjects.length >= 3) finalStatus = "Fail";
     else if (failedSubjects.length > 0) finalStatus = "Compartment";
+
+    const today = new Date().toLocaleDateString();
 
     document.getElementById("schoolTitle").innerText = school || "School Name";
     document.getElementById("rName").innerText = name;
@@ -213,6 +215,7 @@
     document.getElementById("oGrade").innerText = overallGrade;
     document.getElementById("failList").innerText = failedSubjects.length > 0 ? failedSubjects.join(", ") : "None";
     document.getElementById("finalResult").innerText = finalStatus;
+    document.getElementById("dateToday").innerText = today;
 
     document.getElementById("inputSection").classList.add("hidden");
     document.getElementById("resultCard").classList.remove("hidden");

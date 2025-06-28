@@ -10,7 +10,7 @@
       padding: 20px;
     }
     .container {
-      max-width: 900px;
+      max-width: 950px;
       margin: auto;
       background: #fff;
       padding: 30px;
@@ -19,9 +19,9 @@
     h2, h3 {
       text-align: center;
     }
-    input[type="text"], input[type="number"], select {
+    input, select {
       padding: 5px;
-      width: auto;
+      margin: 5px;
     }
     table {
       width: 100%;
@@ -49,10 +49,6 @@
       margin-top: 40px;
       font-weight: bold;
     }
-    .info-bar {
-      text-align: right;
-      margin-bottom: 10px;
-    }
   </style>
 </head>
 <body>
@@ -60,10 +56,17 @@
 <div class="container" id="inputSection">
   <h2>School Result Card</h2>
 
-  <p><strong>School Name:</strong> <input type="text" id="schoolName" value="Saif Bhatti"></p>
-  <p><strong>Student Name:</strong> <input type="text" id="name">
-     <strong>Class:</strong> <input type="text" id="class">
-     <strong>Roll No:</strong> <input type="text" id="roll">
+  <p>
+    <strong>School Name:</strong> <input type="text" id="schoolName" value="Saif Bhatti">
+    <strong>Date:</strong> <input type="number" id="date" min="1" max="31" placeholder="DD">
+    <strong>Month:</strong> <input type="text" id="month" placeholder="June">
+    <strong>Year:</strong> <input type="number" id="year" placeholder="2025">
+  </p>
+
+  <p>
+    <strong>Student Name:</strong> <input type="text" id="name">
+    <strong>Class:</strong> <input type="text" id="class">
+    <strong>Roll No:</strong> <input type="text" id="roll">
   </p>
 
   <table>
@@ -83,26 +86,25 @@
 </div>
 
 <div class="container hidden" id="resultCard">
-  <div class="info-bar">
-    Date: <span id="dateToday"></span>
-  </div>
+  <h2 id="schoolTitle">School Result Card</h2>
+  <h3>Student Result Card</h3>
 
-  <h2 id="schoolTitle">School Name</h2>
-  <h3>School Result Card</h3>
-  <p><strong>Name:</strong> <span id="rName"></span> |
-     <strong>Class:</strong> <span id="rClass"></span> |
-     <strong>Roll No:</strong> <span id="rRoll"></span>
+  <p><strong>Date:</strong> <span id="rDate"></span></p>
+  <p>
+    <strong>Name:</strong> <span id="rName"></span> |
+    <strong>Class:</strong> <span id="rClass"></span> |
+    <strong>Roll No:</strong> <span id="rRoll"></span>
   </p>
 
   <table>
     <thead>
       <tr>
         <th>Subject</th>
-        <th>Total Marks</th>
-        <th>Obtained Marks</th>
+        <th>Total</th>
+        <th>Obtained</th>
         <th>Percentage</th>
-        <th>Status</th>
         <th>Grade</th>
+        <th>Status</th>
       </tr>
     </thead>
     <tbody id="resultTable"></tbody>
@@ -150,15 +152,14 @@
     `;
   });
 
-  function getGrade(percent, total) {
-    if (total === 0) return "Non";
+  function getGrade(percent) {
     if (percent >= 90) return "A+";
-    if (percent >= 80) return "A";
-    if (percent >= 70) return "B";
-    if (percent >= 60) return "C";
-    if (percent >= 33) return "D";
-    if (percent > 0) return "F";
-    return "F";
+    else if (percent >= 80) return "A";
+    else if (percent >= 70) return "B";
+    else if (percent >= 60) return "C";
+    else if (percent >= 50) return "D";
+    else if (percent >= 33) return "E";
+    else return "F";
   }
 
   function generateResult() {
@@ -166,6 +167,10 @@
     const clas = document.getElementById("class").value;
     const roll = document.getElementById("roll").value;
     const school = document.getElementById("schoolName").value;
+    const date = document.getElementById("date").value;
+    const month = document.getElementById("month").value;
+    const year = document.getElementById("year").value;
+
     const totals = document.querySelectorAll(".total");
     const obtained = document.querySelectorAll(".obtained");
 
@@ -176,10 +181,14 @@
     for (let i = 0; i < subjects.length; i++) {
       const t = Number(totals[i].value);
       const o = Number(obtained[i].value);
-      const percent = t === 0 ? 0 : ((o / t) * 100).toFixed(2);
-      const grade = getGrade(percent, t);
-      const status = t === 0 ? "Non" : (percent >= 33 ? "Pass" : "Fail");
-      if (status === "Fail") failedSubjects.push(subjects[i]);
+      let percent = 0, grade = "N/A", status = "Non";
+
+      if (t > 0) {
+        percent = ((o / t) * 100).toFixed(2);
+        grade = getGrade(percent);
+        status = percent >= 33 ? "Pass" : "Fail";
+        if (status === "Fail") failedSubjects.push(subjects[i]);
+      }
 
       totalMarks += t;
       totalObtained += o;
@@ -189,25 +198,24 @@
           <td>${subjects[i]}</td>
           <td>${t}</td>
           <td>${o}</td>
-          <td>${t === 0 ? "0" : percent + "%"}</td>
+          <td>${t === 0 ? "-" : percent + "%"}</td>
+          <td>${t === 0 ? "-" : grade}</td>
           <td>${status}</td>
-          <td>${grade}</td>
         </tr>
       `;
     }
 
     const overallPercent = totalMarks > 0 ? ((totalObtained / totalMarks) * 100).toFixed(2) : 0;
-    const overallGrade = getGrade(overallPercent, totalMarks);
+    const overallGrade = getGrade(overallPercent);
     let finalStatus = "Pass";
     if (failedSubjects.length >= 3) finalStatus = "Fail";
     else if (failedSubjects.length > 0) finalStatus = "Compartment";
-
-    const today = new Date().toLocaleDateString();
 
     document.getElementById("schoolTitle").innerText = school || "School Name";
     document.getElementById("rName").innerText = name;
     document.getElementById("rClass").innerText = clas;
     document.getElementById("rRoll").innerText = roll;
+    document.getElementById("rDate").innerText = `${date}/${month}/${year}`;
     document.getElementById("resultTable").innerHTML = resultHTML;
     document.getElementById("tMarks").innerText = totalMarks;
     document.getElementById("oMarks").innerText = totalObtained;
@@ -215,7 +223,6 @@
     document.getElementById("oGrade").innerText = overallGrade;
     document.getElementById("failList").innerText = failedSubjects.length > 0 ? failedSubjects.join(", ") : "None";
     document.getElementById("finalResult").innerText = finalStatus;
-    document.getElementById("dateToday").innerText = today;
 
     document.getElementById("inputSection").classList.add("hidden");
     document.getElementById("resultCard").classList.remove("hidden");
